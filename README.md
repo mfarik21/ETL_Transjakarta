@@ -12,33 +12,37 @@ It follows the technical test requirements for building a complete Extract → T
   - `routes.csv`
   - `shelter_corridor.csv`
   - `realisasi_bus.csv`
-  - PostgreSQL tables: `transaksi_bus`
-  - PostgreSQL tables: `transaksi_halte`
+  - `transaksi_bus`
+  - `transaksi_halte`
 - Reads CSV files from `./data/`.
+- Upsert into raw schema
 
 ### **2️⃣ Transform**
 - Cleans and standardizes data:
   - Removes duplicates
   - Normalizes bus body number format → `AAA-000`
   - Converts timestamps
-  - Filters customer records (`status_var = 'S'`)
-- Joins:
-  - Route master
-  - Shelter corridor
-  - Bus data
-  - Transaction data
-- Computes aggregations:
-  - Customer count & amount per **card type**
-  - Customer count & amount per **route**
-  - Customer count & amount per **fare**
+  - Converts status (`pelanggan | nonpelanggan`)
+  - Deduplication
+- Upsert into staging schema
 
 ### **3️⃣ Load**
-- Writes final dataset to:
-  - PostgreSQL table: `dw.cube_trip_transaction`
-  - CSV report at: `./reports/cube_report_YYYY-MM-DD.csv`
 
+- Build dimension tables:
+    - `dw.dim_route` 
+    - `dw.dim_shelter`
+    - `dw.dim_bus`
+- Build facts tables: `dw.fact_transactoin`
+  - Join transaksi_halte & transaksi_bus 
+  - Fill routes_code 
+- Writes final dataset to:
+  - Cube: `dw.cube_trip_transaction` 
+  - CSV report at:
+    - `./reports/YYYY-MM-DD/by_card_type.csv`
+    - `./reports/YYYY-MM-DD/by_fare.csv`
+    - `./reports/YYYY-MM-DD/by_route.csv`
 ### **4️⃣ Schedule**
-- DAG runs every day at **07:00 (Asia/Jakarta)**.
+- DAG runs every day at **07:00**.
 
 ---
 
@@ -52,7 +56,7 @@ It follows the technical test requirements for building a complete Extract → T
 
 ### **ETL Flow Diagram**
 (Insert your ETL flow image)
-![ETL Flow](./docs/etl_flow.png)
+![ETL Flow](./docs/etl_diagram.jpg)
 
 ## 🛠️ Technology Stack
 1. Docker & Docker Compose – Container orchestration for Airflow and PostgreSQL.
@@ -85,7 +89,7 @@ It follows the technical test requirements for building a complete Extract → T
 │
 ├── data/                       # Input CSVs (5 files)
 ├── reports/                    # Auto-generated output CSVs
-├── sql_scripts/                # SQL for building schemas, cube, dims
+├── sql_scripts/                # SQL for building schemas: raw, staging, dw & cube
 ├── postgres_init/              # Auto-init PostgreSQL schemas
 ├── docker-compose.yaml         # Full Airflow + Postgres stack
 └── README.md
@@ -174,7 +178,7 @@ This will run:
 
 1. Extract
 2. Transform
-3. Load into PostgreSQL (DW)
+3. Load into PostgreSQL
 4. Generate CSV report
 
 ## 📄 Output Files & Tables
@@ -184,5 +188,7 @@ dw.cube_trip_transaction
 ```
 2. Daily CSV Report
 ```bash
-./reports/cube_report_YYYY-MM-DD.csv
+  ./reports/YYYY-MM-DD/by_card_type.csv
+  ./reports/YYYY-MM-DD/by_fare.csv
+  ./reports/YYYY-MM-DD/by_route.csv
 ```

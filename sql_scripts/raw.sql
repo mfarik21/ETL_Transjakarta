@@ -4,9 +4,10 @@ CREATE TABLE IF NOT EXISTS raw.routes (
     _ingest_ts TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS raw.routes (
-    route_code TEXT,
-    route_name TEXT,
+CREATE TABLE IF NOT EXISTS raw.shelter_corridor (
+    shelter_name_var TEXT,
+    corridor_code TEXT,
+    corridor_name TEXT,
     _ingest_ts TIMESTAMP DEFAULT NOW()
 );
 

@@ -16,6 +16,44 @@ import os
 DATA_DIR = "/opt/airflow/data"
 
 
+def apply_dtype_mapping(df: pd.DataFrame) -> pd.DataFrame:
+    dtype_map = {
+        "_var": "string",
+        "_int": "Int64",  # nullable integer
+        "_flo": "float",
+        "_boo": "boolean",
+    }
+
+    for col in df.columns:
+        for suffix, dtype in dtype_map.items():
+
+            if col.endswith(suffix):
+                # --- BOOLEAN: ONLY "true" -> True ---
+                if dtype == "boolean":
+                    df[col] = (
+                        df[col]
+                        .astype(str)
+                        .str.lower()
+                        .str.strip()
+                        .replace(
+                            {
+                                "true": True,
+                            }
+                        )
+                    )
+
+                    # everything not True = False
+                    df[col] = df[col].apply(lambda x: True if x is True else False)
+
+                    df[col] = df[col].astype("boolean")
+                    break
+
+                # --- ALL OTHER TYPES ---
+                df[col] = df[col].astype(dtype, errors="ignore")
+                break
+    return df
+
+
 def stage_transform_table(df: pd.DataFrame) -> pd.DataFrame:
     """Standardize column names + strip strings."""
     df = df.copy()
@@ -187,8 +225,8 @@ def transform(**context):
             "terminal_name_var": "terminal_name",
         }
 
+        df = apply_dtype_mapping(df)
         df = df.rename(columns=rename_map)
-
         df = drop_metadata(df)
         df = convert_datetimes(df)
         df = clean_common(df)

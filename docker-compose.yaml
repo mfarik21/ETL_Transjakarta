@@ -13,6 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./sql_scripts:/opt/airflow/sql_scripts
       - ./postgres_init:/docker-entrypoint-initdb.d
 
   airflow-init:
